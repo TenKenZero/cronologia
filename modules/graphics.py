@@ -12,6 +12,8 @@ from moviepy import (
     ImageClip, AudioFileClip, TextClip, CompositeVideoClip,
     concatenate_videoclips, ColorClip
 )
+from moviepy.audio.AudioClip import CompositeAudioClip, AudioClip, concatenate_audioclips
+from moviepy.video.compositing.CompositeVideoClip import concatenate_videoclips
 from PIL import Image
 
 # Configure logging
@@ -59,35 +61,38 @@ def create_video_clip(
                 create_placeholder_image(img_path)
             
             # Load image and set duration
-            img_clip = ImageClip(img_path).set_duration(image_duration)
+            img_clip = ImageClip(img_path, duration=image_duration)
             
             # Set start time
-            start_time = i * image_duration
-            img_clip = img_clip.set_start(start_time)
+            # start_time = i * image_duration
+            # img_clip = img_clip.set_start(start_time)
             
             image_clips.append(img_clip)
         
         # Create caption text clip
         txt_clip = TextClip(
-            caption,
-            fontsize=30,
+            text=caption,
+            font_size=50,
             color='white',
-            bg_color='rgba(0,0,0,0.5)',
-            font='Arial-Bold',
+            bg_color=rgba_to_tuple('rgba(0,0,0,0.5)'),
+            font='arial.ttf',
             size=(img_clip.w, None),
-            method='caption',
-            align='center'
-        ).set_duration(audio_duration)
-        
-        txt_clip = txt_clip.set_position(('center', 30))
+            method='label',
+            text_align='center',
+            horizontal_align='center',
+            vertical_align='center',
+            duration=audio_duration
+        )
         
         # Combine image clips and text
-        clips = image_clips + [txt_clip]
-        video = CompositeVideoClip(clips, size=image_clips[0].size)
+        # clips = [txt_clip] + image_clips
+        clipVideo = concatenate_videoclips(image_clips, method='chain')
+        video = CompositeVideoClip([clipVideo, txt_clip])
         
         # Add audio with 0.5s offset
-        audio = audio.set_start(0.5)
-        video = video.set_audio(audio)
+        silence = AudioClip(lambda t: 0, duration=0.5, fps=audio.fps) # Added fps=audio.fps
+        audio = concatenate_audioclips([silence, audio, silence])
+        video = video.with_audio(audio)
         
         # Write video file
         video.write_videofile(
@@ -137,24 +142,25 @@ def create_intro_clip(
             create_placeholder_image(cover_image_path)
         
         # Load cover image
-        img_clip = ImageClip(cover_image_path).set_duration(duration)
+        img_clip = ImageClip(cover_image_path, duration=duration)
         
         # Create title text clip
         txt_clip = TextClip(
-            title,
-            fontsize=50,
+            text=title,
+            font_size=50,
             color='white',
-            bg_color='rgba(0,0,0,0.7)',
-            font='Arial-Bold',
+            bg_color=rgba_to_tuple('rgba(0,0,0,0.7)'),
+            font='arial.ttf',
             size=(img_clip.w, None),
-            method='caption',
-            align='center'
-        ).set_duration(duration)
-        
-        txt_clip = txt_clip.set_position('center')
+            method='label',
+            text_align='center',
+            horizontal_align='center',
+            vertical_align='center',
+            duration=duration
+        )        
         
         # Combine image and text
-        video = CompositeVideoClip([img_clip, txt_clip], size=img_clip.size)
+        video = CompositeVideoClip([img_clip, txt_clip])
         
         # Write video file
         video.write_videofile(
@@ -247,3 +253,9 @@ def create_placeholder_image(output_path: str, width: int = 1280, height: int = 
         
     except Exception as e:
         logger.error(f"Error in create_placeholder_image: {e}", exc_info=True)
+
+def rgba_to_tuple(rgba_str: str) -> tuple:
+    """Converts an RGBA string to an RGBA tuple."""
+    rgba_str = rgba_str.replace('rgba(', '').replace(')', '')
+    r, g, b, a = map(float, rgba_str.split(','))
+    return (int(r), int(g), int(b), int(a * 255))

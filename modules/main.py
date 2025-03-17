@@ -126,7 +126,7 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
             logger.info(f"Created video clip for stage {stage_order}: {clip_path}")
         
         # Step 3: Create intro clip
-        cover_path = os.path.join(dirs["base"], "media", "image", "cover.jpg")
+        cover_path = os.path.join(dirs["base"], "media", "image", "cover.jpeg")
         intro_clip_path = create_intro_clip(
             title,
             cover_path,
