@@ -148,6 +148,7 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
         intro_clip_path = create_intro_clip(
             title,
             cover_image_path,
+            intro_audio_path,
             os.path.join(dirs["video"], f"{execution_id}_intro.mp4")
         )
         

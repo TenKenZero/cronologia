@@ -85,7 +85,6 @@ def create_video_clip(
         )
         
         # Combine image clips and text
-        # clips = [txt_clip] + image_clips
         clipVideo = concatenate_videoclips(image_clips, method='chain')
         video = CompositeVideoClip([clipVideo, txt_clip])
         
@@ -115,8 +114,8 @@ def create_video_clip(
 def create_intro_clip(
     title: str,
     cover_image_path: str,
-    output_path: str,
-    duration: float = 2.0
+    audio_path: str,
+    output_path: str
 ) -> str:
     """
     Create an intro clip with the title and cover image.
@@ -141,8 +140,14 @@ def create_intro_clip(
             logger.warning(f"Cover image not found: {cover_image_path}. Creating placeholder.")
             create_placeholder_image(cover_image_path)
         
+        # Load audio file
+        audio = AudioFileClip(audio_path)
+        
+        # Add 0.5 seconds of silence at the beginning and end
+        audio_duration = audio.duration + 1.0  # 0.5s at beginning and end
+
         # Load cover image
-        img_clip = ImageClip(cover_image_path, duration=duration)
+        img_clip = ImageClip(cover_image_path, duration=audio_duration)
         
         # Create title text clip
         txt_clip = TextClip(
@@ -156,11 +161,16 @@ def create_intro_clip(
             text_align='center',
             horizontal_align='center',
             vertical_align='center',
-            duration=duration
+            duration=audio_duration
         )        
         
         # Combine image and text
         video = CompositeVideoClip([img_clip, txt_clip])
+
+        # Add audio with 0.5s offset
+        silence = AudioClip(lambda t: 0, duration=0.5, fps=audio.fps) # Added fps=audio.fps
+        audio = concatenate_audioclips([silence, audio, silence])
+        video = video.with_audio(audio)
         
         # Write video file
         video.write_videofile(
