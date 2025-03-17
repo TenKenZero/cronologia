@@ -196,6 +196,65 @@ def generate_voiceover_script(topic: str, stage: Dict[str, Any], all_stages: Lis
         logger.error(f"Error in generate_voiceover_script: {e}", exc_info=True)
         # Return a minimal script in case of error
         return f"During this period, {stage.get('name')} marked an important milestone in the history of {topic}. {stage.get('description')[:50]}..."
+    
+def generate_voiceover_intro_script(topic: str, all_stages: List[Dict[str, Any]]) -> str:
+    """
+    Generate a voiceover script for the introduction of the timeline video.
+
+    Args:
+        topic: The main topic of the timeline
+        all_stages: List of all stages in the timeline
+
+    Returns:
+        Voiceover intro script text
+    """
+    logger.info(f"Generating voiceover intro script for topic: {topic}")
+
+    try:
+        # All stages for context
+        all_stages_text = ""
+        if all_stages:
+            all_stages_text = "Estas son todas las etapas del video: ".join([f"\n*   **Título de la etapa:** {s.get('name')} \n*   **Descripción completa de la etapa:** {s.get('description')} \n*   **Número de etapa:** {s.get('order')} \n" for s in all_stages])
+        
+        # Construct prompt for Gemini
+        prompt = f"""
+        Actúa como un guionista profesional de documentales y videos cortos para redes sociales. Tu tarea es escribir el guion para la voz en off de la *introducción* de un video cronológico sobre "{topic}".
+
+        {all_stages_text}
+
+        Instrucciones para el guion de la voz en off de la introducción:
+
+        * Duración: El guion debe tener una duración aproximada de 5-10 segundos al ser leído en voz alta. La brevedad y el impacto inicial son clave.
+        * Lenguaje: Usa un lenguaje claro, conciso, atractivo y que genere curiosidad en el espectador. El objetivo es enganchar a la audiencia desde el principio. Evita la jerga técnica innecesaria.
+        * Contenido: Utiliza las siguientes formulas para generar un guion corto y efectivo:
+            * Comienza con una pregunta para retar los conocimientos del espectador. Por ejemplo, "¿Qué sabes realmente sobre...?".
+            * Comienza con una pregunta que aliente la curiosidad del espectador. Por ejemplo, "¿Alguna vez te has preguntado...?".
+            * Comienza con una afirmación sorprendente o un dato poco conocido. Por ejemplo, "Lo que no sabías sobre...".
+            * Comienza con una anécdota breve y relevante que se encuentre entre la informacion de las etapas del video. Por ejemplo, "Hace siglos, en un lugar remoto...".
+            * Comienza preguntando un hecho curioso o poco conocido que se encuentre entre la informacion de las etapas del video.. Por ejemplo, "¿Sabías que...?".
+            * Finaliza la introducción con una transición suave hacia la primera etapa de la cronología. Por ejemplo, "Descubre cómo todo comenzó en este video".
+            * Finaliza con una frase que invite a la audiencia a seguir viendo. Por ejemplo, "No te pierdas la increíble historia de...".
+            * Finaliza con una una invitación a la acción. Por ejemplo, "Acompáñanos en este viaje a través de la historia de ...".
+            * Finaliza con una afirmación que genere expectativa. Por ejemplo, "Lo que estás a punto de ver cambiará tu perspectiva sobre...".
+            * Finaliza con una invitacion segura. Por ejemplo, "Descubre esto y mas en el video de hoy".
+        
+        * Tono: Adopta un tono entusiasta, informativo y amigable, que invite al espectador a seguir viendo el video.
+        * Formato de salida: Responde *SOLO* con el guion de la voz en off. No incluyas encabezados, pies de página, número de palabras, ni ningún otro texto que no deba ser leído en voz alta. Tampoco incluyas asteriscos (*). El texto debe ser directamente utilizable por un generador de texto a voz, utiliza los signos de puntuación adecuados.
+        """
+
+        # Call Gemini API
+        response = client.models.generate_content(model=textModel, contents=prompt)
+
+        # Extract the script
+        script = response.text.strip()
+
+        logger.debug(f"Generated intro script with {len(script.split())} words")
+        return script
+
+    except Exception as e:
+        logger.error(f"Error in generate_voiceover_intro_script: {e}", exc_info=True)
+        # Return a minimal script in case of error
+        return f"Bienvenidos. Hoy exploraremos la historia de {topic} a través de su cronología."
 
 def generate_image_prompts(topic: str, stage: Dict[str, Any], all_stages: List[Dict[str, Any]], voiceover_script: str) -> List[str]:
     """
@@ -294,6 +353,95 @@ def generate_image_prompts(topic: str, stage: Dict[str, Any], all_stages: List[D
             f"Historical scene showing key aspects of {topic} during {stage.get('name')}."
         ]
     
+def generate_cover_image_prompt(topic: str, all_stages: List[Dict[str, Any]]) -> str:
+    """
+    Generate image prompt for the cover of the video.
+    
+    Args:
+        topic: The main topic of the timeline
+        all_stages: List of all stages in the timeline
+        
+    Returns:
+        Image prompt
+    """
+    logger.info(f"Generating cover image prompt for topic: {topic}")
+    
+    try:
+        # All stages for context
+        all_stages_text = ""
+        if all_stages:
+            all_stages_text = "Estas son todas las etapas del video: ".join([f"\n*   **Título de la etapa:** {s.get('name')} \n*   **Descripción completa de la etapa:** {s.get('description')} \n*   **Número de etapa:** {s.get('order')} \n" for s in all_stages])
+        
+        # Construct prompt for Gemini
+        prompt = f"""
+        Actúa como un director de arte experto en la creación de imágenes impactantes y representativas para portadas de videos históricos, con un profundo conocimiento de la IA generadora de imágenes. Tu tarea es elaborar un prompt detallado para una IA generadora de imágenes. Este prompt debe describir visualmente la evolución histórica completa del tema: "{topic}", de una manera atractiva e informativa para la portada de un video corto (TikTok, Instagram Reels).
+
+        {all_stages_text}
+
+        Instrucciones para el prompt de la imagen de portada:
+
+        * **Representación General:** La imagen debe representar visualmente la *totalidad* de la evolución histórica del tema, no solo una etapa específica. Intenta evocar una sensación del viaje histórico completo.
+        * **Atractivo Visual:** La imagen debe ser visualmente atractiva y llamativa para captar la atención del espectador en una plataforma de redes sociales. Considera el uso de elementos visuales impactantes y una composición interesante.
+        * **Informativo:** Aunque atractiva, la imagen también debe ser informativa y dar una idea clara del tema del video.
+        * **Posibles Enfoques:** Considera las siguientes ideas (puedes combinarlas o proponer otras):
+            * **Metáfora Visual:** Utiliza una metáfora visual que represente la evolución del tema (por ejemplo, una semilla que crece hasta convertirse en un árbol para representar el crecimiento de una idea).
+            * **Montaje o Collage:** Un montaje sutil de elementos visuales clave de diferentes etapas de la cronología.
+            * **Representación Simbólica:** Utiliza símbolos o iconos que representen el tema y su transformación a lo largo del tiempo.
+            * **Imagen Conceptual:** Una imagen que transmita el concepto general de la evolución histórica del tema de manera abstracta pero reconocible.
+        * **Detalles Específicos:** Incluye detalles específicos sobre:
+            * **Estilo:** ¿Debería ser una imagen moderna y minimalista, una ilustración con un toque histórico, una representación artística abstracta, etc.?
+            * **Composición:** ¿Cuál debería ser el punto focal? ¿Debería haber algún elemento en primer plano y otros en segundo plano? ¿Debería haber algún tipo de marco o borde?
+            * **Iluminación:** ¿Cómo es la iluminación general? ¿Brillante y llamativa, tenue y misteriosa, etc.?
+            * **Colores:** ¿Qué paleta de colores debería predominar? ¿Colores vibrantes para atraer la atención, colores más sobrios para un tono histórico, etc.?
+            * **Elementos Visuales Clave:** Describe cualquier objeto, figura o elemento específico que *debería* aparecer o que *podría* aparecer para representar el tema y su evolución.
+        * **Longitud:** El prompt debe tener entre 2 y 4 oraciones. Sé descriptivo y conciso.
+        * **Imagen Sensible:** La imagen a crear debe seguir las normas de seguridad de Google y no contener contenido sensible.
+        * **Idioma de Salida:** El prompt debe estar escrito en idioma inglés.
+        * **Formato de Salida:** Responde *SOLO* con un array JSON de un string. El string contiene el prompt de la imagen. Ejemplo:
+            ```json
+            ["A visually striking and informative image representing the historical evolution of {topic}, perhaps using a symbolic representation of growth from past to present."]
+            ```
+            No incluyas ningún texto adicional antes o después del array JSON.
+        """
+        
+        # Call Gemini API
+        response = client.models.generate_content(model=textModel, contents=prompt)
+        
+        # Parse the response
+        content = response.text
+        
+        # Extract JSON from the response
+        if "```json" in content:
+            json_str = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            json_str = content.split("```")[1].split("```")[0].strip()
+        else:
+            json_str = content.strip()
+        
+        # Parse JSON
+        image_prompts = json.loads(json_str)
+        
+        # Ensure we have exactly 3 prompts
+        if len(image_prompts) < 1:
+            logger.warning(f"Expected at least one image prompt, got {len(image_prompts)}. Adjusting...")
+            if len(image_prompts) < 1:
+                # Add generic prompts if we have less than 1
+                while len(image_prompts) < 1:
+                    image_prompts.append(f"Historical illustration of the historical evolution of {topic}.")
+            else:
+                # Truncate if we have more than 3
+                image_prompts = image_prompts[:1]
+        
+        logger.debug(f"Generated {len(image_prompts)} image prompts")
+        return image_prompts
+        
+    except Exception as e:
+        logger.error(f"Error in generate_cover_image_prompt: {e}", exc_info=True)
+        # Return generic prompts in case of error
+        return [
+            f"Historical illustration of the historical evolution of {topic}."
+        ]
+    
 def generate_images(prompts: List[str], output_dir: str, prefix: str) -> List[str]:
     """
     Generate images based on text prompts using Google's Gemini API (Imagen).
@@ -364,6 +512,66 @@ def generate_images(prompts: List[str], output_dir: str, prefix: str) -> List[st
     except Exception as e:
         logger.error(f"Error in generate_images: {e}", exc_info=True)
         return []
+    
+def generate_cover_image(prompt: str, output_dir: str, prefix: str) -> str:
+    """
+    Generate a cover image based on a text prompt using Google's Gemini API (Imagen).
+
+    Args:
+        prompt: The text prompt for image generation.
+        output_dir: Directory where the image will be saved.
+        prefix: Prefix for the image filename.
+
+    Returns:
+        Path to the generated cover image.
+    """
+    logger.info(f"Generating cover image with prefix {prefix}")
+
+    try:
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+
+        cover_image_path = os.path.join(output_dir, f"{prefix}_cover.jpg")
+
+        logger.debug(f"Generating cover image for prompt: {prompt}")
+
+        # Generate image using the Imagen model
+        response = client.models.generate_images(
+            model=imageModel,  # 'imagen-3.0-generate-002' as defined at the top of the file
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="9:16"  # Assuming landscape format for timeline videos
+            )
+        )
+
+        # Process the generated image
+        if response.generated_images:
+            # Get the first generated image
+            generated_image = response.generated_images[0]
+
+            # Save the image
+            try:
+                image = Image.open(BytesIO(generated_image.image.image_bytes))
+                image.save(cover_image_path)
+                logger.debug(f"Cover image saved to {cover_image_path}")
+                return cover_image_path
+            except UnidentifiedImageError as e:
+                logger.error(f"Error opening cover image data: {e}. Likely invalid image format.")
+                _create_placeholder_image(output_dir, prefix, "cover")
+                return os.path.join(output_dir, f"{prefix}_cover.jpg")
+            except Exception as e:
+                logger.error(f"Other error processing cover image data: {e}")
+                _create_placeholder_image(output_dir, prefix, "cover")
+                return os.path.join(output_dir, f"{prefix}_cover.jpg")
+        else:
+            logger.warning(f"No cover image generated for prompt. Creating placeholder.")
+            _create_placeholder_image(output_dir, prefix, "cover")
+            return os.path.join(output_dir, f"{prefix}_cover.jpg")
+
+    except Exception as e:
+        logger.error(f"Error in generate_cover_image: {e}", exc_info=True)
+        return ""
 
 
 def _create_placeholder_image(output_dir: str, prefix: str, index: int):
