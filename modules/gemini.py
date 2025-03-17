@@ -143,15 +143,32 @@ def generate_voiceover_script(topic: str, stage: Dict[str, Any], all_stages: Lis
     logger.info(f"Generating voiceover script for stage {stage.get('order')}: {stage.get('name')}")
     
     try:
+        # Other stages for context
+        previous_stages = [s for s in all_stages if s.get('order') < stage.get('order')]
+        next_stages = [s for s in all_stages if s.get('order') > stage.get('order')]
+
+        # Create a text description of the previous stages
+        previous_stages_text = ""
+        if previous_stages:
+            previous_stages_text = "Estas son las etapas anteriores a la etapa actual: ".join([f"\n*   **Título de la etapa:** {s.get('name')} \n*   **Descripción completa de la etapa:** {s.get('description')} \n*   **Número de etapa:** {s.get('order')} \n" for s in previous_stages])
+        # Create a text description of the next stages
+        next_stages_text = ""
+        if next_stages:
+            next_stages_text = "Estas son las etapas posteriores a la etapa actual: ".join([f"\n*   **Título de la etapa:** {s.get('name')} \n*   **Descripción completa de la etapa:** {s.get('description')} \n*   **Número de etapa:** {s.get('order')} \n" for s in next_stages])            
+
         # Construct prompt for Gemini
         prompt = f"""
         Actúa como un guionista profesional de documentales y videos cortos para redes sociales. Tu tarea es escribir el guion para la voz en off de *una* etapa específica de un video cronológico sobre "{topic}".
-
+        
+        {previous_stages_text}
+        
         Esta es la información de la etapa para la que debes escribir el guion:
 
         *   **Título de la etapa:** "{stage.get('name')}"
         *   **Descripción completa de la etapa:** "{stage.get('description')}"
         *   **Número de etapa:** "{stage.get('order')}"
+        
+        {next_stages_text}
 
         Instrucciones para el guion de la voz en off:
 
@@ -163,7 +180,7 @@ def generate_voiceover_script(topic: str, stage: Dict[str, Any], all_stages: Lis
             *   Si esta *no* es la última etapa, termina con un *gancho* o una pregunta que invite a ver la siguiente etapa.  Por ejemplo: "¿Pero qué pasó después?", "Esto llevaría a...", "El siguiente paso sería crucial...", "Sin embargo, todo estaba a punto de cambiar...".
         *   **Tono:** Adopta un tono conversacional y ameno, como si estuvieras contando una historia interesante a un amigo. Evita la formalidad excesiva.
         *   **Fechas:** Incluye fechas o períodos *solo si son absolutamente esenciales* para comprender el evento y *si son fáciles de recordar*.  En videos cortos, demasiadas fechas pueden ser confusas.
-        * **Formato de salida:** Responde *SOLO* con el guion de la voz en off. No incluyas encabezados, pies de página, número de palabras, ni ningún otro texto que no deba ser leído en voz alta. Tampoco incluyas asteriscos. El texto debe ser directamente utilizable por un generador de texto a voz.
+        *   **Formato de salida:** Responde *SOLO* con el guion de la voz en off. No incluyas encabezados, pies de página, número de palabras, ni ningún otro texto que no deba ser leído en voz alta. Tampoco incluyas asteriscos (*). El texto debe ser directamente utilizable por un generador de texto a voz, utiliza los signos de puntuación adecuados.
         """
         
         # Call Gemini API
@@ -196,11 +213,18 @@ def generate_image_prompts(topic: str, stage: Dict[str, Any], all_stages: List[D
     logger.info(f"Generating image prompts for stage {stage.get('order')}: {stage.get('name')}")
     
     try:
+        # All stages for context
+        all_stages_text = ""
+        if all_stages:
+            all_stages_text = "Estas son todas las etapas del video: ".join([f"\n*   **Título de la etapa:** {s.get('name')} \n*   **Descripción completa de la etapa:** {s.get('description')} \n*   **Número de etapa:** {s.get('order')} \n" for s in all_stages])
+        
         # Construct prompt for Gemini
         prompt = f"""
-        Actúa como un director de arte experto en la creación de imágenes históricas y documentales, con un profundo conocimiento de la IA generadora de imágenes. Tu tarea es elaborar *tres* prompts detallados para una IA generadora de imágenes. Estos prompts deben describir visualmente la siguiente etapa histórica:
+        Actúa como un director de arte experto en la creación de imágenes históricas y documentales, con un profundo conocimiento de la IA generadora de imágenes. Tu tarea es elaborar *tres* prompts detallados para una IA generadora de imágenes. Estos prompts deben describir visualmente una determinada etapa histórica del tema: "{topic}".
 
-        *   **Tema general:** "{topic}"
+        {all_stages_text}
+
+        Aquí tienes la información de la etapa particular para la que debes crear los prompts:
         *   **Título de la etapa:** "{stage.get('name')}"
         *   **Descripción de la etapa:** "{stage.get('description')}"
         *   **Guion de la voz en off:** "{voiceover_script}"
