@@ -50,7 +50,7 @@ def create_video_clip(
         audio_duration = audio.duration + 1.0  # 0.5s at beginning and end
         
         # Calculate duration for each image
-        image_duration = audio_duration / 3
+        image_duration = audio_duration / len(image_paths)
         
         # Create image clips
         image_clips = []
@@ -76,7 +76,7 @@ def create_video_clip(
             color='white',
             bg_color=rgba_to_tuple('rgba(0,0,0,0.5)'),
             font='arial.ttf',
-            size=(img_clip.w, None),
+            size=(img_clip.w, img_clip.h),
             method='label',
             text_align='center',
             horizontal_align='center',
@@ -156,7 +156,7 @@ def create_intro_clip(
             color='white',
             bg_color=rgba_to_tuple('rgba(0,0,0,0.7)'),
             font='arial.ttf',
-            size=(img_clip.w, None),
+            size=(img_clip.w, img_clip.h),
             method='label',
             text_align='center',
             horizontal_align='center',
@@ -177,7 +177,7 @@ def create_intro_clip(
             output_path,
             fps=24,
             codec='libx264',
-            audio=False,
+            audio_codec='aac',
             temp_audiofile='temp-audio.m4a',
             remove_temp=True
         )
