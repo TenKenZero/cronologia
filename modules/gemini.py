@@ -24,7 +24,6 @@ try:
         raise ValueError("GEMINI_API_KEY environment variable not set")
     
     client = genai.Client(api_key=GEMINI_API_KEY)
-    #genai.configure(api_key=GEMINI_API_KEY)
     textModel = "gemini-2.0-pro-exp-02-05"
     imageModel = "imagen-3.0-generate-002"
 except Exception as e:
@@ -164,7 +163,7 @@ def generate_voiceover_script(topic: str, stage: Dict[str, Any], all_stages: Lis
             *   Si esta *no* es la última etapa, termina con un *gancho* o una pregunta que invite a ver la siguiente etapa.  Por ejemplo: "¿Pero qué pasó después?", "Esto llevaría a...", "El siguiente paso sería crucial...", "Sin embargo, todo estaba a punto de cambiar...".
         *   **Tono:** Adopta un tono conversacional y ameno, como si estuvieras contando una historia interesante a un amigo. Evita la formalidad excesiva.
         *   **Fechas:** Incluye fechas o períodos *solo si son absolutamente esenciales* para comprender el evento y *si son fáciles de recordar*.  En videos cortos, demasiadas fechas pueden ser confusas.
-        * **Formato de salida:** Responde *SOLO* con el guion de la voz en off. No incluyas encabezados, pies de página, ni ningún otro texto que no deba ser leído en voz alta. El texto debe ser directamente utilizable por un generador de texto a voz.
+        * **Formato de salida:** Responde *SOLO* con el guion de la voz en off. No incluyas encabezados, pies de página, número de palabras, ni ningún otro texto que no deba ser leído en voz alta. Tampoco incluyas asteriscos. El texto debe ser directamente utilizable por un generador de texto a voz.
         """
         
         # Call Gemini API
