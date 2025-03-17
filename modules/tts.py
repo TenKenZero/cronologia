@@ -24,7 +24,7 @@ except Exception as e:
     logger.error(f"Failed to initialize Text-to-Speech client: {e}")
     client = None
 
-def generate_audio(text: str, output_path: str, voice_name: str = "en-US-Neural2-D") -> str:
+def generate_audio(text: str, output_path: str, voice_name: str = "es-US-Chirp-HD-D") -> str:
     """
     Generate an audio file from the given text using Google's Text-to-Speech API.
     
@@ -51,9 +51,9 @@ def generate_audio(text: str, output_path: str, voice_name: str = "en-US-Neural2
         
         # Build the voice request
         voice = texttospeech.VoiceSelectionParams(
-            language_code="en-US",
+            language_code="es-US",
             name=voice_name,
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+            ssml_gender=texttospeech.SsmlVoiceGender.MALE
         )
         
         # Select the type of audio file to return
