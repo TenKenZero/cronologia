@@ -13,7 +13,8 @@ from typing import Dict, List, Any, Tuple
 from .gemini import (
     generate_timeline_stages,
     generate_voiceover_script,
-    generate_image_prompts
+    generate_image_prompts,
+    generate_images
 )
 from .tts import generate_audio
 from .graphics import create_video_clip, create_intro_clip, combine_video_clips
@@ -87,10 +88,7 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
             logger.info(f"Processing stage {stage_order}: {stage_name}")
             
             # Generate voiceover script
-            voiceover_script = generate_voiceover_script(topic, stage, stages)
-            
-            # Generate image prompts
-            image_prompts = generate_image_prompts(topic, stage, stages, voiceover_script)
+            voiceover_script = generate_voiceover_script(topic, stage, stages)            
             
             # Generate audio for voiceover
             audio_path = generate_audio(
@@ -98,14 +96,23 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
                 os.path.join(dirs["audio"], f"{execution_id}_stage{stage_order}.mp3")
             )
             
-            # Generate images based on prompts (this would typically call an image generation API)
-            image_paths = []
-            for i, prompt in enumerate(image_prompts):
-                # In a real implementation, this would call Imagen 3 API
-                # For now, we'll just create placeholder paths
-                image_path = os.path.join(dirs["image"], f"{execution_id}_stage{stage_order}_{i+1}.jpg")
-                image_paths.append(image_path)
-                logger.debug(f"Generated image path: {image_path} for prompt: {prompt}")
+            # Generate image prompts
+            image_prompts = generate_image_prompts(topic, stage, stages, voiceover_script)
+            # Generate images based on prompts
+            image_paths = generate_images(
+                image_prompts, 
+                dirs["image"], 
+                f"{execution_id}_stage{stage_order}"
+            )
+
+            if not image_paths or len(image_paths) < 3:
+                logger.warning(f"Insufficient images generated. Creating placeholders.")
+                image_paths = []
+                for i in range(3):
+                    image_path = os.path.join(dirs["image"], f"{execution_id}_stage{stage_order}_{i+1}.jpg")
+                    from .graphics import create_placeholder_image
+                    create_placeholder_image(image_path)
+                    image_paths.append(image_path)
             
             # Create video clip for this stage
             clip_path = create_video_clip(
