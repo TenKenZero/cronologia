@@ -1,2 +1,4 @@
 /virtualenv/
 .env
+/modules/__pycache__/
+app.log
