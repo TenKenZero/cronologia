@@ -113,62 +113,75 @@ def create_video_clip(
 
 def create_intro_clip(
     title: str,
-    cover_image_path: str,
+    cover_image_paths: List[str],
     audio_path: str,
     output_path: str
 ) -> str:
     """
-    Create an intro clip with the title and cover image.
+    Create an intro clip with the title and cover images.
     
     Args:
         title: Title text to display
-        cover_image_path: Path to the cover image
+        cover_image_paths: List of paths to the cover images to use
+        audio_path: Path to the audio file
         output_path: Path where the video file will be saved
-        duration: Duration of the intro clip in seconds
         
     Returns:
         Path to the generated video file
     """
-    logger.info(f"Creating intro clip with title: {title}")
+    logger.info(f"Creating intro clip with {len(cover_image_paths)} cover images and title: {title}")
     
     try:
         # Create output directory if it doesn't exist
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
-        # Create a placeholder image if the cover image doesn't exist
-        if not os.path.exists(cover_image_path):
-            logger.warning(f"Cover image not found: {cover_image_path}. Creating placeholder.")
-            create_placeholder_image(cover_image_path)
         
         # Load audio file
         audio = AudioFileClip(audio_path)
         
         # Add 0.5 seconds of silence at the beginning and end
         audio_duration = audio.duration + 1.0  # 0.5s at beginning and end
-
-        # Load cover image
-        img_clip = ImageClip(cover_image_path, duration=audio_duration)
+        
+        # Calculate duration for each image
+        image_duration = audio_duration / len(cover_image_paths)
+        
+        # Create image clips
+        image_clips = []
+        for i, img_path in enumerate(cover_image_paths):
+            # Create a placeholder image if the file doesn't exist
+            if not os.path.exists(img_path):
+                logger.warning(f"Cover image not found: {img_path}. Creating placeholder.")
+                create_placeholder_image(img_path)
+            
+            # Load image and set duration
+            img_clip = ImageClip(img_path, duration=image_duration)
+            
+            image_clips.append(img_clip)
         
         # Create title text clip
+        # Use the dimensions of the first image for the text clip
+        first_img_clip = ImageClip(cover_image_paths[0])
         txt_clip = TextClip(
             text=title,
             font_size=50,
             color='white',
             bg_color=rgba_to_tuple('rgba(0,0,0,0.7)'),
             font='arial.ttf',
-            size=(img_clip.w, img_clip.h),
+            size=(first_img_clip.w, first_img_clip.h),
             method='label',
             text_align='center',
             horizontal_align='center',
             vertical_align='center',
             duration=audio_duration
-        )        
+        )
         
-        # Combine image and text
-        video = CompositeVideoClip([img_clip, txt_clip])
-
+        # Combine image clips
+        clipVideo = concatenate_videoclips(image_clips, method='chain')
+        
+        # Overlay text on video
+        video = CompositeVideoClip([clipVideo, txt_clip])
+        
         # Add audio with 0.5s offset
-        silence = AudioClip(lambda t: 0, duration=0.5, fps=audio.fps) # Added fps=audio.fps
+        silence = AudioClip(lambda t: 0, duration=0.5, fps=audio.fps)
         audio = concatenate_audioclips([silence, audio, silence])
         video = video.with_audio(audio)
         

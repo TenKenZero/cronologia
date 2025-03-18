@@ -15,9 +15,9 @@ from .gemini import (
     generate_voiceover_script,
     generate_voiceover_intro_script,
     generate_image_prompts,
-    generate_cover_image_prompt,
+    generate_cover_image_prompts,
     generate_images,
-    generate_cover_image
+    generate_cover_images
 )
 from .tts import generate_audio
 from .graphics import create_video_clip, create_intro_clip, combine_video_clips
@@ -108,7 +108,7 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
                 f"{execution_id}_stage{stage_order}"
             )
 
-            if not image_paths or len(image_paths) < 3:
+            if not image_paths or len(image_paths) < 1:
                 logger.warning(f"Insufficient images generated. Creating placeholders.")
                 image_paths = []
                 for i in range(3):
@@ -137,17 +137,17 @@ def generate_timeline_video(topic: str, execution_id: str) -> str:
             os.path.join(dirs["audio"], f"{execution_id}_intro.mp3")
         )
         # Creating cover image prompt for the intro
-        cover_prompt = generate_cover_image_prompt(topic, stages)
+        cover_prompts = generate_cover_image_prompts(topic, stages)
         # Creating cover image based on prompt
-        cover_image_path = generate_cover_image(
-            cover_prompt, 
+        cover_image_paths = generate_cover_images(
+            cover_prompts, 
             dirs["image"], 
             execution_id
         )
         # Creating video clip for the cover image        
         intro_clip_path = create_intro_clip(
             title,
-            cover_image_path,
+            cover_image_paths,
             intro_audio_path,
             os.path.join(dirs["video"], f"{execution_id}_intro.mp4")
         )
