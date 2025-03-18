@@ -1,4 +1,5 @@
 /virtualenv/
+/media/
 .env
 /modules/__pycache__/
 app.log
