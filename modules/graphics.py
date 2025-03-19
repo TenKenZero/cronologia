@@ -159,14 +159,13 @@ def create_intro_clip(
             # Load image and set duration
             img_clip = ImageClip(img_path, duration=image_duration)
             
-            image_clips.append(img_clip)
+            image_clips.append(img_clip)        
         
-        # Wrapping text
-        wrapped_text, adjusted_font_size = wrap_text(title, first_img_clip.w)
-
-        # Create title text clip
         # Use the dimensions of the first image for the text clip
         first_img_clip = ImageClip(cover_image_paths[0])
+        # Wrapping text
+        wrapped_text, adjusted_font_size = wrap_text(title, first_img_clip.w)
+        # Create title text clip
         txt_clip = TextClip(
             text=wrapped_text,
             font_size=adjusted_font_size,
