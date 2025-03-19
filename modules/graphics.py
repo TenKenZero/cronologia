@@ -7,6 +7,7 @@ video clips for the timeline videos.
 import os
 import logging
 from typing import List, Optional
+import textwrap
 
 from moviepy import (
     ImageClip, AudioFileClip, TextClip, CompositeVideoClip,
@@ -69,10 +70,13 @@ def create_video_clip(
             
             image_clips.append(img_clip)
         
+        # Wrapping text
+        wrapped_text, adjusted_font_size = wrap_text(caption, img_clip.w)
+
         # Create caption text clip
         txt_clip = TextClip(
-            text=caption,
-            font_size=50,
+            text=wrapped_text,
+            font_size=adjusted_font_size,
             color='white',
             bg_color=rgba_to_tuple('rgba(0,0,0,0.5)'),
             font='arial.ttf',
@@ -157,12 +161,15 @@ def create_intro_clip(
             
             image_clips.append(img_clip)
         
+        # Wrapping text
+        wrapped_text, adjusted_font_size = wrap_text(title, first_img_clip.w)
+
         # Create title text clip
         # Use the dimensions of the first image for the text clip
         first_img_clip = ImageClip(cover_image_paths[0])
         txt_clip = TextClip(
-            text=title,
-            font_size=50,
+            text=wrapped_text,
+            font_size=adjusted_font_size,
             color='white',
             bg_color=rgba_to_tuple('rgba(0,0,0,0.7)'),
             font='arial.ttf',
@@ -282,3 +289,23 @@ def rgba_to_tuple(rgba_str: str) -> tuple:
     rgba_str = rgba_str.replace('rgba(', '').replace(')', '')
     r, g, b, a = map(float, rgba_str.split(','))
     return (int(r), int(g), int(b), int(a * 255))
+
+def wrap_text (text: str, img_clip_width: int) -> str:
+    # Adjust max_chars_per_line based on video width
+        max_chars_per_line = 25
+        max_chars_per_line = min(max_chars_per_line, int(img_clip_width / 15))  # Rough estimate: 15px per character
+        
+        # Wrap the text
+        wrapped_text = textwrap.fill(text, width=max_chars_per_line)
+        
+        # Count the number of lines
+        num_lines = wrapped_text.count('\n') + 1
+        
+        # Adjust font size if too many lines (to avoid vertical overflow)
+        default_font_size = 50
+        if num_lines > 5:
+            adjusted_font_size = max(20, default_font_size - (num_lines - 5) * 5)  # Reduce font size for many lines
+        else:
+            adjusted_font_size = default_font_size
+        
+        return wrapped_text, adjusted_font_size
